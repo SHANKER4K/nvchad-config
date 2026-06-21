@@ -83,6 +83,10 @@ map("n", "<leader>sa", function()
   utils.send_to_python_repl(vim.api.nvim_buf_get_lines(0, 0, -1, false))
 end, { desc = "Send all to Python REPL" })
 
+map("n", "<leader>h", function()
+  vim.cmd("tabe " .. vim.fn.stdpath("config") .. "/docs/superpowers/cheatsheets/python-ml-cheatsheet.md")
+end, { desc = "Open Python ML cheat sheet" })
+
 -- LSP
 map("n", "<leader>ds", vim.diagnostic.setloclist, { desc = "LSP diagnostic loclist" })
 
