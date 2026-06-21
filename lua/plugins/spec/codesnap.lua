@@ -1,6 +1,7 @@
 ---@type NvPluginSpec
 return {
   "mistricky/codesnap.nvim",
+  enabled = false,
   event = "LspAttach",
   init = function()
     local map = vim.keymap.set
