@@ -1,19 +1,12 @@
-local status_ok, auto_tag = pcall(require, "nvim-treesitter.configs")
-if not status_ok then
-  return
-end
-
 ---@type NvPluginSpec
 return {
   "windwp/nvim-ts-autotag",
-  -- https://github.com/windwp/nvim-ts-autotag?tab=readme-ov-file#a-note-on-lazy-loading
+  lazy = true,
   event = { "BufReadPre", "BufNewFile" },
   config = function()
-    ---@diagnostic disable-next-line
-    auto_tag.setup {
-      autotag = {
-        enable = true,
-      },
-    }
+    local status, autotag = pcall(require, "nvim-ts-autotag")
+    if status then
+      autotag.setup { autotag = { enable = true } }
+    end
   end,
 }
