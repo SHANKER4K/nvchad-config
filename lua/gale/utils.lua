@@ -485,4 +485,42 @@ M.fix_json_content = function()
   vim.fn.winrestview(view)
 end
 
+--- Get or create a Python REPL terminal and send lines to it
+---@param lines string[]
+M.send_to_python_repl = function(lines)
+  local terms = vim.g.nvchad_terms or {}
+  local existing = terms["pyRepl"]
+  local job_id
+
+  if existing and vim.api.nvim_buf_is_valid(existing.buf) then
+    job_id = vim.b[existing.buf].terminal_job_id
+  end
+
+  if not job_id or job_id <= 0 then
+    local term = require "nvchad.term"
+    term.toggle {
+      pos = "float",
+      id = "pyRepl",
+      cmd = "python3",
+    }
+    vim.wait(1000, function()
+      local t = vim.g.nvchad_terms or {}
+      local e = t["pyRepl"]
+      return e and e.buf and vim.b[e.buf].terminal_job_id and vim.b[e.buf].terminal_job_id > 0
+    end)
+    local entry = (vim.g.nvchad_terms or {})["pyRepl"]
+    if entry and entry.buf then
+      job_id = vim.b[entry.buf].terminal_job_id
+    end
+  end
+
+  if not job_id or job_id <= 0 then
+    vim.notify("No Python REPL available", vim.log.levels.WARN)
+    return
+  end
+
+  local text = table.concat(lines, "\n") .. "\n"
+  vim.api.nvim_chan_send(job_id, text)
+end
+
 return M

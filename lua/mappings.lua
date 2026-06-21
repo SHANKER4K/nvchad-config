@@ -68,6 +68,21 @@ map("n", "<leader>ch", "<cmd>NvCheatsheet<CR>", { desc = "Toggle nvcheatsheet" }
 -- Python
 map("n", "<leader>vp", "<cmd>PyrightSetPython<CR>", { desc = "Python set pyright interpreter" })
 
+map("n", "<leader>sl", function()
+  local utils = require "gale.utils"
+  utils.send_to_python_repl { vim.api.nvim_get_current_line() }
+end, { desc = "Send line to Python REPL" })
+
+map("v", "<leader>sl", function()
+  local utils = require "gale.utils"
+  utils.send_to_python_repl(vim.fn.getline("'<", "'>"))
+end, { desc = "Send selection to Python REPL" })
+
+map("n", "<leader>sa", function()
+  local utils = require "gale.utils"
+  utils.send_to_python_repl(vim.api.nvim_buf_get_lines(0, 0, -1, false))
+end, { desc = "Send all to Python REPL" })
+
 -- LSP
 map("n", "<leader>ds", vim.diagnostic.setloclist, { desc = "LSP diagnostic loclist" })
 
