@@ -83,6 +83,17 @@ map("n", "<leader>sa", function()
   utils.send_to_python_repl(vim.api.nvim_buf_get_lines(0, 0, -1, false))
 end, { desc = "Send all to Python REPL" })
 
+map("n", "<leader>r", function()
+  vim.cmd("w")
+  local term = require "nvchad.term"
+  term.runner {
+    id = "pyRun",
+    pos = "sp",
+    cmd = "python3 " .. vim.fn.shellescape(vim.fn.expand "%"),
+    clear_cmd = "clear",
+  }
+end, { desc = "Run current Python file" })
+
 map("n", "<leader>h", function()
   vim.cmd("tabe " .. vim.fn.stdpath("config") .. "/docs/superpowers/cheatsheets/python-ml-cheatsheet.md")
 end, { desc = "Open Python ML cheat sheet" })
