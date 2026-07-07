@@ -485,9 +485,12 @@ M.fix_json_content = function()
   vim.fn.winrestview(view)
 end
 
---- Get or create a Python REPL terminal and send lines to it
+--- Get or create a Python/IPython REPL terminal and send lines to it
 ---@param lines string[]
-M.send_to_python_repl = function(lines)
+---@param opts? {cmd?: string}
+M.send_to_python_repl = function(lines, opts)
+  opts = opts or {}
+  local cmd = opts.cmd or "ipython"
   local terms = vim.g.nvchad_terms or {}
   local existing = terms["pyRepl"]
   local job_id
@@ -501,7 +504,7 @@ M.send_to_python_repl = function(lines)
     term.toggle {
       pos = "float",
       id = "pyRepl",
-      cmd = "python3",
+      cmd = cmd,
     }
     vim.wait(1000, function()
       local t = vim.g.nvchad_terms or {}
@@ -521,6 +524,52 @@ M.send_to_python_repl = function(lines)
 
   local text = table.concat(lines, "\n") .. "\n"
   vim.api.nvim_chan_send(job_id, text)
+end
+
+--- Find the current # %% cell and return its lines
+---@return string[]
+M.get_ipython_cell = function()
+  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+  local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1  -- 0-indexed
+  local cell_start, cell_end = cursor, cursor + 1
+
+  -- walk up to find cell start
+  for i = cursor, 0, -1 do
+    if i == cursor then
+      -- skip current line if it IS a cell marker
+      if lines[i]:match "^# %%" then
+        cell_start = i + 1
+        break
+      end
+    elseif lines[i]:match "^# %%" then
+      cell_start = i + 1
+      break
+    else
+      cell_start = i
+    end
+  end
+
+  -- walk down to find cell end
+  for i = cursor + 1, #lines - 1 do
+    if lines[i]:match "^# %%" then
+      cell_end = i
+      break
+    else
+      cell_end = i + 1
+    end
+  end
+
+  return vim.list_slice(lines, cell_start + 1, cell_end)
+end
+
+--- Send the current ipython cell to REPL
+M.send_ipython_cell = function()
+  local cell = M.get_ipython_cell()
+  if #cell == 0 then
+    vim.notify "No ipython cell found"
+    return
+  end
+  M.send_to_python_repl(cell)
 end
 
 return M

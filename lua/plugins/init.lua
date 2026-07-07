@@ -29,7 +29,7 @@ return {
   { import = "plugins.spec.lsp-endhints" },
   { import = "plugins.spec.lsp-signature" },
   { import = "plugins.spec.markview" },
-  { import = "plugins.spec.molten" },
+
   { import = "plugins.spec.matchup" },
   { import = "plugins.spec.md-preview" },
   { import = "plugins.spec.multicursor" },
