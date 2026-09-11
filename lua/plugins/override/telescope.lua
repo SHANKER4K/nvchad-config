@@ -3,79 +3,47 @@ return {
   "nvim-telescope/telescope.nvim",
   opts = function(_, opts)
     local map = vim.keymap.set
-    local pickers = require("gale.telescope").pickers
+    local builtin = require "telescope.builtin"
     local SIZES = {
       HEIGHT = 0.75,
       WIDTH = 0.66,
       PREVIEW_WIDTH = 0.5,
     }
 
-    map("n", "<leader>fa", function()
-      pickers.files("find", {
+    local function lay(base)
+      return vim.tbl_deep_extend("force", base, {
         layout_config = {
           horizontal = {
             width = SIZES.WIDTH,
             height = SIZES.HEIGHT,
           },
         },
-        follow = true,
-        no_ignore = true,
-        hidden = true,
-        prompt_prefix = " 󱡴  ",
-        prompt_title = "All Files",
       })
-    end, { desc = "Telescope search all files" })
+    end
 
     map("n", "<leader>ff", function()
-      pickers.files("find", {
-        layout_config = {
-          horizontal = {
-            width = SIZES.WIDTH,
-            height = SIZES.HEIGHT,
-          },
-        },
-        prompt_title = "Files",
-      })
+      builtin.find_files(lay { prompt_title = "Files" })
     end, { desc = "Telescope search files" })
 
+    map("n", "<leader>fa", function()
+      builtin.find_files(lay { no_ignore = true, hidden = true, prompt_title = "All Files" })
+    end, { desc = "Telescope search all files" })
+
     map("n", "<leader>fo", function()
-      pickers.files("old", {
-        layout_config = {
-          horizontal = {
-            width = SIZES.WIDTH,
-            height = SIZES.HEIGHT,
-          },
-        },
-        prompt_title = "Old Files",
-      })
+      builtin.oldfiles(lay { prompt_title = "Old Files" })
     end, { desc = "Telescope search recent files" })
 
     map("n", "<leader>fw", function()
-      pickers.grep("live_grep", nil, nil, {
-        layout_config = {
-          vertical = {
-            width = SIZES.WIDTH,
-            height = SIZES.HEIGHT,
-          },
-        },
-        prompt_title = "Live Grep",
-      })
+      builtin.live_grep(lay { prompt_title = "Live Grep" })
     end, { desc = "Telescope live grep" })
 
     map("n", "<leader>fb", function()
-      pickers.buffers(true, {
-        layout_config = {
-          horizontal = {
-            width = SIZES.WIDTH,
-            height = SIZES.HEIGHT,
-          },
-        },
-      })
+      builtin.buffers(lay { previewer = true })
     end, { desc = "Telescope buffers" })
 
+    -- Direct commands (no custom layout)
     map("n", "<leader>fc", "<cmd>Telescope current_buffer_fuzzy_find<CR>", { desc = "Telescope find in current file" })
     map("n", "<leader>ft", "<cmd>Telescope terms<CR>", { desc = "Telescope terms" })
-    -- map("n", "<leader>th", "<cmd>Telescope themes<CR>", { desc = "Telescope NvChad themes" })
     map("n", "<leader>fr", "<cmd>Telescope lsp_references<CR>", { desc = "Telescope LSP references" })
     map("n", "<leader>ma", "<cmd>Telescope marks<CR>", { desc = "Telescope find marks" })
     map("n", "<leader>fh", "<cmd>Telescope highlights<CR>", { desc = "Telescope find highlights" })
@@ -88,9 +56,7 @@ return {
 
     opts = vim.tbl_deep_extend("force", opts, {
       defaults = {
-        preview = {
-          hide_on_startup = true,
-        },
+        preview = { hide_on_startup = true },
         results_title = false,
         selection_caret = " ",
         entry_prefix = " ",
@@ -115,11 +81,7 @@ return {
           },
         },
       },
-      pickers = {
-        builtin = {
-          prompt_title = "Builtin Pickers",
-        },
-      },
+      pickers = { builtin = { prompt_title = "Builtin Pickers" } },
     })
 
     return opts

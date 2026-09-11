@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "neovim": {
+      "source": "julianobarbosa/claude-code-skills",
+      "sourceType": "github",
+      "skillPath": "skills/neovim/SKILL.md",
+      "computedHash": "65c7637d1b84037629011e8a6950296eebd61c76ec916af90660699d8aab756e"
+    }
+  }
+}

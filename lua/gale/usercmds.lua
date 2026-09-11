@@ -5,11 +5,6 @@ create_cmd("FixJson", utils.fix_json_content, {})
 create_cmd("CombineLists", utils.combine_lists, {})
 create_cmd("MergeLists", utils.combine_lists, {})
 
-create_cmd("WipeReg", function()
-  utils.clear_registers()
-  vim.notify(" Registers cleared and shada file successfully updated.", vim.log.levels.INFO)
-end, { desc = "Wipe registers" })
-
 create_cmd("ToggleWordCount", function()
   if vim.g.st_words_in_buffer then
     vim.g.st_words_in_buffer = false
@@ -38,26 +33,17 @@ end, { desc = "Update plugins imports" })
 create_cmd("SrcFile", function()
   if vim.bo.filetype ~= "" then
     vim.cmd "so %"
-    vim.notify.dismiss() ---@diagnostic disable-line
+    vim.notify.dismiss()
     vim.notify(vim.fn.expand "%" .. " sourced!", vim.log.levels.INFO)
   else
-    vim.notify.dismiss() ---@diagnostic disable-line
+    vim.notify.dismiss()
     vim.notify("No file to source", vim.log.levels.ERROR)
   end
 end, { desc = "Source current file" })
 
-create_cmd("TabbyStart", function()
-  require("gale.tabby").start()
-end, { desc = "Start TabbyML docker container" })
-
-create_cmd("TabbyStop", function()
-  require("gale.tabby").stop()
-end, { desc = "Stop TabbyML docker container" })
-
 create_cmd("ToggleInlayHints", function()
-  ---@diagnostic disable-next-line
-  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
-end, { desc = "Toogle inlay hints in current buffer" })
+  vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled({ 0 }))
+end, { desc = "Toggle inlay hints in current buffer" })
 
 create_cmd("DiagnosticsVirtualTextToggle", function()
   local current_value = vim.diagnostic.config().virtual_text

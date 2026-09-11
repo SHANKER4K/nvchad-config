@@ -4,11 +4,17 @@ local custom = {
   g = {
     dap_virtual_text = true,
     bookmark_sign = "",
-    skip_ts_context_commentstring_module = true,
     tabufline_visible = true,
+    clipboard = {
+      name = "wl-clipboard",
+      copy = { ["+"] = "wl-copy", ["*"] = "wl-copy" },
+      paste = { ["+"] = "wl-paste", ["*"] = "wl-paste" },
+      cache_enabled = 1,
+    },
     showtabline = 1,
 
-    clipboard = "wl-copy",
+    -- Python provider for pynvim
+    python3_host_prog = "/home/ismail/.local/share/nvim/venv/bin/python3",
   },
   opt = {
     encoding = "utf-8",

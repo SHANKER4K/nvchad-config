@@ -45,7 +45,7 @@ return {
       pyright = {
         settings = {
           python = {
-            pythonPath = vim.fn.executable("python3") and vim.fn.executable("python3") or "python",
+            pythonPath = vim.fn.executable "python3" and vim.fn.executable "python3" or "python",
             analysis = {
               autoSearchPaths = true,
               useLibraryCodeForTypes = true,

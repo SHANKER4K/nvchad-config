@@ -7,8 +7,6 @@
 ---@field glb_map fun(mode: string | table, lhs: string | table, rhs: string | fun(), opts?: table | nil)
 --- Create a keymap local to buffer
 ---@field buf_map fun(buf?: integer, mode: string | table, lhs: string | table, rhs: string | fun(), opts?: table)
---- Delete keymap/s globally. Does not attempt to unmap if keymap does not exist.
----@field del_map fun(mode: string | table, trigger: string | table)
 --- Format a file based on its path, using conform
 ---@field format_file fun(file_path: string)
 --- Helper function to match valid "words" in a line
@@ -61,74 +59,6 @@ M.buf_map = function(bufnr, mode, lhs, rhs, opts)
   opts = opts or {}
   opts.buffer = bufnr and bufnr or 0
   M.glb_map(mode, lhs, rhs, opts)
-end
-
-local map_exists = function(name, map_mode)
-  local check = vim.fn.maparg(name, map_mode)
-  if check == "" then
-    return false
-  elseif check == {} then
-    return false
-  else
-    return true
-  end
-end
-
-M.del_map = function(mode, trigger)
-  local del = vim.api.nvim_del_keymap
-  local is_tbl = M.is_tbl
-
-  local get_case = function(vmode, lhs)
-    if not is_tbl(vmode) and not is_tbl(lhs) then
-      return 1
-    elseif not is_tbl(vmode) and is_tbl(lhs) then
-      return 2
-    elseif is_tbl(vmode) and not is_tbl(lhs) then
-      return 3
-    elseif is_tbl(vmode) and is_tbl(lhs) then
-      return 4
-    end
-  end
-
-  local case = get_case(mode, trigger)
-  switch(case, {
-    [1] = function()
-      ---@cast mode string
-      ---@cast trigger string
-      if map_exists(trigger, mode) then
-        del(mode, trigger)
-      end
-    end,
-    [2] = function()
-      ---@cast mode string
-      ---@cast trigger table
-      for _, triggerval in ipairs(trigger) do
-        if map_exists(triggerval, mode) then
-          del(mode, triggerval)
-        end
-      end
-    end,
-    [3] = function()
-      ---@cast mode table
-      ---@cast trigger string
-      for _, modeval in ipairs(mode) do
-        if map_exists(trigger, modeval) then
-          del(modeval, trigger)
-        end
-      end
-    end,
-    [4] = function()
-      ---@cast mode table
-      ---@cast trigger table
-      for _, modeval in ipairs(mode) do
-        for _, triggerval in ipairs(trigger) do
-          if map_exists(triggerval, modeval) then
-            del(modeval, triggerval)
-          end
-        end
-      end
-    end,
-  })
 end
 
 local is_inspect_tree_open = function()
@@ -206,41 +136,6 @@ M.format_file = function(file_path)
   vim.api.nvim_buf_delete(bufnr, { force = true })
 end
 
---- Listener for code actions capabilities
--- TODO: Fix this
-M.code_action_listener = function()
-  local buffer = vim.api.nvim_get_current_buf()
-  local clients = vim.lsp.get_clients { bufnr = buffer }
-
-  if clients == nil or #clients == 0 then
-    return
-  end
-
-  local has_code_action_support = vim.tbl_filter(function(client)
-    return client.server_capabilities.codeActionProvider
-  end, clients)[1] ~= nil
-
-  if has_code_action_support then
-    -- local context = { diagnostics = vim.lsp.diagnostic.get_line_diagnostics(buffer) }
-    local params = vim.lsp.util.make_range_params(0, "utf-8")
-    -- params.context = context
-
-    vim.lsp.buf_request(buffer, "textDocument/codeAction", params, function(_, result, _, _)
-      vim.fn.sign_unplace("code_action_gear", { buffer = buffer })
-
-      if result and next(result) then
-        vim.fn.sign_place(
-          0,
-          "code_action_gear",
-          "CodeActionSign",
-          buffer,
-          { lnum = vim.api.nvim_win_get_cursor(0)[1], priority = 100 }
-        )
-      end
-    end)
-  end
-end
-
 M.handle_copy = function()
   local mode = vim.fn.mode()
   if mode == "v" or mode == "V" or mode == "" then
@@ -260,33 +155,18 @@ end
 
 M.menus = {
   main = {
-    {
-      name = "  Copy",
-      cmd = M.handle_copy,
-    },
-    {
-      name = "  Paste",
-      cmd = M.handle_paste,
-    },
+    { name = "  Copy", cmd = M.handle_copy },
+    { name = "  Paste", cmd = M.handle_paste },
     { name = "separator" },
-    {
-      name = "󰉁 Lsp Actions",
-      hl = "Exblue",
-      items = "lsp",
-    },
+    { name = "󰉁 Lsp Actions", hl = "Exblue", items = "lsp" },
     { name = "separator" },
-    {
-      name = "  Color Picker",
-      hl = "Exred",
-      cmd = function()
-        require("minty.huefy").open()
-      end,
-    },
+    { name = "  Color Picker", hl = "Exred", cmd = function()
+      require("minty.huefy").open()
+    end },
   },
 }
 
 M.word_iterator = function(line)
-  -- Match sequences of alphanumeric characters, underscores, periods, or hyphens
   local pattern = "[%w_%-%.]+"
   return function()
     return string.gmatch(line, pattern)
@@ -328,32 +208,6 @@ M.count_words_in_buffer = function()
   end
 end
 
-M.clear_registers = function()
-  vim.cmd "rshada!"
-
-  for i = 0, 9 do
-    vim.fn.setreg(tostring(i), "")
-  end
-
-  for char = string.byte "a", string.byte "z" do
-    vim.fn.setreg(string.char(char), "")
-    vim.fn.setreg(string.char(char):upper(), "")
-  end
-
-  local special_registers = { '"', "-", "_", "*", "+", "=" }
-  for _, reg in ipairs(special_registers) do
-    vim.fn.setreg(reg, "")
-  end
-
-  if vim.fn.bufname "#" ~= "" then
-    vim.fn.setreg("#", "")
-  end
-
-  vim.cmd "let @/ = ''"
-
-  vim.cmd "wshada!"
-end
-
 M.harpoon_menu = function()
   local harpoon = require "harpoon"
   harpoon.ui:toggle_quick_menu(harpoon:list(), {
@@ -378,10 +232,6 @@ end
 M.combine_lists = function()
   local bufnr = vim.api.nvim_get_current_buf()
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-
-  -- Find the first empty line that acts as a separator.
-  -- We use a pattern to catch any whitespace-only line.
-
   local separator_index = nil
   for i, line in ipairs(lines) do
     if line:match "^%s*$" then
@@ -389,49 +239,35 @@ M.combine_lists = function()
       break
     end
   end
-
   if not separator_index then
     vim.notify("Separator (empty line) not found!", vim.log.levels.ERROR)
     return
   end
-
-  -- Build list1 (lines before the separator) and list2 (lines after)
   local list1 = {}
   local list2 = {}
-
   for i = 1, separator_index - 1 do
     table.insert(list1, lines[i])
   end
-
   for i = separator_index + 1, #lines do
     table.insert(list2, lines[i])
   end
-
   if #list1 ~= #list2 then
     vim.notify("The lists have different lengths!", vim.log.levels.ERROR)
     return
   end
-
-  -- Combine the two lists, adding " - " between each pair.
   local combined = {}
   for i = 1, #list1 do
     table.insert(combined, list1[i] .. " - " .. list2[i])
   end
-
-  -- Replace the entire buffer with the combined lines.
   vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, combined)
   vim.notify "Lists combined successfully!"
 end
 
 M.fix_json_content = function()
-  -- Save the view to prevent cursor jumping
   local view = vim.fn.winsaveview()
   local bufnr = vim.api.nvim_get_current_buf()
-
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
   local modified = false
-
-  -- Handling sandwich brackets
   local open_idx, close_idx
   for i, line in ipairs(lines) do
     if line:match "^%s*%[" then
@@ -441,9 +277,7 @@ M.fix_json_content = function()
       close_idx = i
     end
   end
-
   if open_idx and close_idx then
-    -- Remove them from their current sorted positions
     if open_idx > close_idx then
       table.remove(lines, open_idx)
       table.remove(lines, close_idx)
@@ -451,24 +285,16 @@ M.fix_json_content = function()
       table.remove(lines, close_idx)
       table.remove(lines, open_idx)
     end
-
-    -- Insert them at the correct positions
     table.insert(lines, 1, "[")
     table.insert(lines, "]")
     modified = true
   end
-
-  -- Remove comma from the LAST element
   for i = 2, #lines - 1 do
     local line = lines[i]
-
-    -- Ensure EVERY object line ends with a comma first
     if line:match "}%s*$" then
       lines[i] = line:gsub("}%s*$", "},")
       modified = true
     end
-
-    -- If it's the LAST item, remove any existing comma
     if i == #lines - 1 then
       if lines[i]:match "},%s*$" then
         lines[i] = lines[i]:gsub("},%s*$", "}")
@@ -476,100 +302,11 @@ M.fix_json_content = function()
       end
     end
   end
-
   if modified then
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, lines)
     print "JSON Fixed: Brackets re-sandwiched & commas normalized"
   end
-
   vim.fn.winrestview(view)
-end
-
---- Get or create a Python/IPython REPL terminal and send lines to it
----@param lines string[]
----@param opts? {cmd?: string}
-M.send_to_python_repl = function(lines, opts)
-  opts = opts or {}
-  local cmd = opts.cmd or "ipython"
-  local terms = vim.g.nvchad_terms or {}
-  local existing = terms["pyRepl"]
-  local job_id
-
-  if existing and vim.api.nvim_buf_is_valid(existing.buf) then
-    job_id = vim.b[existing.buf].terminal_job_id
-  end
-
-  if not job_id or job_id <= 0 then
-    local term = require "nvchad.term"
-    term.toggle {
-      pos = "float",
-      id = "pyRepl",
-      cmd = cmd,
-    }
-    vim.wait(1000, function()
-      local t = vim.g.nvchad_terms or {}
-      local e = t["pyRepl"]
-      return e and e.buf and vim.b[e.buf].terminal_job_id and vim.b[e.buf].terminal_job_id > 0
-    end)
-    local entry = (vim.g.nvchad_terms or {})["pyRepl"]
-    if entry and entry.buf then
-      job_id = vim.b[entry.buf].terminal_job_id
-    end
-  end
-
-  if not job_id or job_id <= 0 then
-    vim.notify("No Python REPL available", vim.log.levels.WARN)
-    return
-  end
-
-  local text = table.concat(lines, "\n") .. "\n"
-  vim.api.nvim_chan_send(job_id, text)
-end
-
---- Find the current # %% cell and return its lines
----@return string[]
-M.get_ipython_cell = function()
-  local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-  local cursor = vim.api.nvim_win_get_cursor(0)[1] - 1  -- 0-indexed
-  local cell_start, cell_end = cursor, cursor + 1
-
-  -- walk up to find cell start
-  for i = cursor, 0, -1 do
-    if i == cursor then
-      -- skip current line if it IS a cell marker
-      if lines[i]:match "^# %%" then
-        cell_start = i + 1
-        break
-      end
-    elseif lines[i]:match "^# %%" then
-      cell_start = i + 1
-      break
-    else
-      cell_start = i
-    end
-  end
-
-  -- walk down to find cell end
-  for i = cursor + 1, #lines - 1 do
-    if lines[i]:match "^# %%" then
-      cell_end = i
-      break
-    else
-      cell_end = i + 1
-    end
-  end
-
-  return vim.list_slice(lines, cell_start + 1, cell_end)
-end
-
---- Send the current ipython cell to REPL
-M.send_ipython_cell = function()
-  local cell = M.get_ipython_cell()
-  if #cell == 0 then
-    vim.notify "No ipython cell found"
-    return
-  end
-  M.send_to_python_repl(cell)
 end
 
 return M

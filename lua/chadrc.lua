@@ -8,8 +8,8 @@ local themes_customs = aux.themes_customs
 
 M.base46 = {
   transparency = true,
-  theme = "bearded-arc",
-  theme_toggle = { "bearded-arc", "bearded-arc" },
+  theme = "material-deep-ocean",
+  theme_toggle = { "material-deep-ocean", "material-deep-ocean" },
   integrations = {
     "blankline",
     "cmp",

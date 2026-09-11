@@ -20,14 +20,3 @@ _G.__toggle_contextual = function(vmode)
     api.toggle.blockwise(vmode)
   end
 end
-
----@param case_table table
--- Add Switch/Case functionality
-_G.switch = function(param, case_table)
-  local case = case_table[param]
-  if case then
-    return case()
-  end
-  local def = case_table["default"]
-  return def and def() or nil
-end
