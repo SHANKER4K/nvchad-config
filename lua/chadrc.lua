@@ -8,8 +8,8 @@ local themes_customs = aux.themes_customs
 
 M.base46 = {
   transparency = true,
-  theme = "material-deep-ocean",
-  theme_toggle = { "material-deep-ocean", "material-deep-ocean" },
+  theme = "chadracula",
+  theme_toggle = { "chadracula", "chadracula" },
   integrations = {
     "blankline",
     "cmp",
